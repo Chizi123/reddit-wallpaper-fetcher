@@ -18,14 +18,13 @@ if [ -f $HOME/.wallpaper/json ]; then
 fi
 
 for i in "${SUBREDDITS[@]}"; do
-    temp=$(curl --user-agent $USER "https://www.reddit.com/r/$i.json?sort=$SORT&limit=1")
+    temp=$(curl -s --user-agent $USER "https://www.reddit.com/r/$i.json?sort=$SORT&limit=1")
     time=$(echo $temp | grep -oP "$TIME_REGEX" | tail -n1 | grep -oP '"created_utc": [\d.]*' | grep -oP '[\d.]*')
-    echo "$(echo \"$time > $LATEST_TIME\" | bc)"
-    if [ $(awk -v n1="$time" -v n2="$LATEST" 'BEGIN {printf (n1>n2?"1":"")}') ]; then
+    if [ $(awk -v n1="$time" -v n2="$LATEST_TIME" 'BEGIN {printf (n1>n2?"1":"")}') ]; then
 	LATEST=$temp
+	LATEST_TIME=$time
     fi
 done
 
-url=$(echo $LATEST | grep -oP "$IMAGE_REGEX" | tail -n1 | grep -oP '"https:\/\/.*"')
-echo $url
-curl -o "$HOME/.wallpaper/temp.$(echo $url | rev | cut -d'.' -f1 | rev)" "$url"
+url=$(echo $LATEST | grep -oP "$IMAGE_REGEX" | tail -n1 | grep -oP '"https:\/\/.*",' | grep -oP '".*"' | sed 's/"//g')
+curl -s -o "$HOME/.wallpaper/temp.$(echo $url | rev | cut -d'.' -f1 | rev)" "$url"
