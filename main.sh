@@ -3,7 +3,7 @@
 TESTING=1
 
 #Default variables
-SUBREDDITS=("EarthPorn")
+SUBREDDITS=("Wallpapers")
 SORT=new
 USER=$(whoami)
 SIZE=1920x1080
@@ -41,9 +41,9 @@ for i in "${SUBREDDITS[@]}"; do
 done
 
 #No Update to do
-#if [ -f $WALLDIR/json ] && [ "$(cat $WALLDIR/json)" == "$LATEST" ]; then
-#    exit
-#fi
+if [ -f $WALLDIR/json ] && [ "$(cat $WALLDIR/json)" == "$LATEST" ]; then
+    exit
+fi
 
 #Download image
 url=$(echo $LATEST | jq ".data.children[-1].data.url" | sed 's/"//g')
@@ -59,8 +59,8 @@ echo https://reddit.com$(echo $LATEST | jq ".data.children[-1].data.permalink" |
 
 #Add image title
 if [ $WRITE_TITLE == 1 ]; then
-    convert "temp.$ext" -fill "$TITLE_COLOR" -gravity "$TITLE_POSITION" -pointsize "$TITLE_SIZE" -annotate 0 "$title" -resize $SIZE "wallpaper.jpg"
+    convert "$WALLDIR/temp.$ext" -fill "$TITLE_COLOR" -gravity "$TITLE_POSITION" -pointsize "$TITLE_SIZE" -annotate 0 "$title" "$WALLDIR/wallpaper.jpg"
 else
-    convert "temp.$ext" -resize $SIZE "wallpaper.jpg"
+    convert "$WALLDIR/temp.$ext" "$WALLDIR/wallpaper.jpg"
 fi
-rm temp.$ext
+rm $WALLDIR/temp.$ext
