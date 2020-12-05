@@ -1,6 +1,6 @@
 #!/bin/bash
 
-TESTING=1
+TESTING=0
 
 #Default variables
 SUBREDDITS=("Wallpapers")
