@@ -23,6 +23,9 @@ fi
 
 source $CONFDIR/reddit-wallpaper-fetcher.conf &>/dev/null
 
+#Loud output for testing a changed config
+[ -z "$1" ] && LOUD="-s"
+
 #Initialise time from last fetch
 LATEST_TIME=0
 if [ -f $WALLDIR/json ]; then
@@ -32,7 +35,7 @@ fi
 
 #Try subreddits for new images
 for i in "${SUBREDDITS[@]}"; do
-    temp=$(curl -s --user-agent $USER "https://www.reddit.com/r/$i.json?sort=$SORT&limit=1")
+    temp=$(curl $LOUD --user-agent $USER "https://www.reddit.com/r/$i.json?sort=$SORT&limit=1")
     time=$(echo $temp | jq ".data.children[-1].data.created_utc")
     if [ $(awk -v n1="$time" -v n2="$LATEST_TIME" 'BEGIN {printf (n1>n2?"1":"")}') ]; then
 	LATEST=$temp
@@ -48,7 +51,7 @@ fi
 #Download image
 url=$(echo $LATEST | jq ".data.children[-1].data.url" | sed 's/"//g')
 ext="$(echo $url | rev | cut -d'.' -f1 | rev)"
-curl -s -o "$WALLDIR/temp.$ext" "$url"
+curl $LOUD -o "$WALLDIR/temp.$ext" "$url"
 
 #Save image information
 echo $LATEST > $WALLDIR/json
