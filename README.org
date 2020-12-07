@@ -13,4 +13,4 @@ The list of subreddits is a bash list, so every entry needs to be in quotes and 
 
 * TODOs
 - Interface with the window manager to set the wallpaper
-- Setup image scaling/resizing
+# - Setup image scaling/resizing

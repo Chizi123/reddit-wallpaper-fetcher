@@ -61,9 +61,9 @@ echo $url >> $WALLDIR/data.txt
 echo https://reddit.com$(echo $LATEST | jq ".data.children[-1].data.permalink" | sed 's/"//g') >> $WALLDIR/data.txt
 
 #Add image title
+convert "$WALLDIR/temp.$ext" -crop "$SIZE+0+0" -resize "$SIZE!" "$WALLDIR/wallpaper.jpg"
+rm "$WALLDIR/temp.$ext"
+
 if [ $WRITE_TITLE == 1 ]; then
-    convert "$WALLDIR/temp.$ext" -fill "$TITLE_COLOR" -gravity "$TITLE_POSITION" -pointsize "$TITLE_SIZE" -annotate 0 "$title" "$WALLDIR/wallpaper.jpg"
-else
-    convert "$WALLDIR/temp.$ext" "$WALLDIR/wallpaper.jpg"
+    convert "$WALLDIR/wallpaper.jpg" -fill "$TITLE_COLOR" -gravity "$TITLE_POSITION" -pointsize "$TITLE_SIZE" -annotate 0 "$title" "$WALLDIR/wallpaper.jpg"
 fi
-rm $WALLDIR/temp.$ext
