@@ -17,48 +17,48 @@ if [ $TESTING != 1 ]; then
     CONFDIR="$HOME/.config"
     WALLDIR="$HOME/.wallpaper"
 else
-    CONFDIR="$(dirname $(realpath $0))"
-    WALLDIR="$(dirname $(realpath $0))"
+    CONFDIR="$(dirname $(realpath "$0"))"
+    WALLDIR="$(dirname $(realpath "$0"))"
 fi
 
-source $CONFDIR/reddit-wallpaper-fetcher.conf &>/dev/null
+source "$CONFDIR"/reddit-wallpaper-fetcher.conf &>/dev/null
 
 #Loud output for testing a changed config
 [ -z "$1" ] && LOUD="-s"
 
 #Initialise time from last fetch
 LATEST_TIME=0
-if [ -f $WALLDIR/json ]; then
-    LATEST=$(cat $WALLDIR/json)
-    LATEST_TIME=$(echo $LATEST | jq ".data.children[-1].data.created_utc")
+if [ -f "$WALLDIR"/json ]; then
+    LATEST=$(cat "$WALLDIR"/json)
+    LATEST_TIME=$(echo "$LATEST" | jq ".data.children[-1].data.created_utc")
 fi
 
 #Try subreddits for new images
 for i in "${SUBREDDITS[@]}"; do
-    temp=$(curl $LOUD --user-agent $USER "https://www.reddit.com/r/$i.json?sort=$SORT&limit=1")
-    time=$(echo $temp | jq ".data.children[-1].data.created_utc")
+    temp=$(curl "$LOUD" --user-agent "$USER" "https://www.reddit.com/r/$i.json?sort=$SORT&limit=1")
+    time=$(echo "$temp" | jq ".data.children[-1].data.created_utc")
     if [ $(awk -v n1="$time" -v n2="$LATEST_TIME" 'BEGIN {printf (n1>n2?"1":"")}') ]; then
-	LATEST=$temp
-	LATEST_TIME=$time
+	LATEST="$temp"
+	LATEST_TIME="$time"
     fi
 done
 
 #No Update to do
-if [ -f $WALLDIR/json ] && [ "$(cat $WALLDIR/json)" == "$LATEST" ]; then
+if [ -f "$WALLDIR"/json ] && [ "$(cat "$WALLDIR"/json)" == "$LATEST" ]; then
     exit
 fi
 
 #Download image
-url=$(echo $LATEST | jq ".data.children[-1].data.url" | sed 's/"//g')
-ext="$(echo $url | rev | cut -d'.' -f1 | rev)"
-curl $LOUD -o "$WALLDIR/temp.$ext" "$url"
+url=$(echo "$LATEST" | jq ".data.children[-1].data.url" | sed 's/"//g')
+ext="$(echo "$url" | rev | cut -d'.' -f1 | rev)"
+curl "$LOUD" -o "$WALLDIR/temp.$ext" "$url"
 
 #Save image information
-echo $LATEST > $WALLDIR/json
-title=$(echo $LATEST | jq ".data.children[-1].data.title")
-echo "$title" > $WALLDIR/data.txt
-echo $url >> $WALLDIR/data.txt
-echo https://reddit.com$(echo $LATEST | jq ".data.children[-1].data.permalink" | sed 's/"//g') >> $WALLDIR/data.txt
+echo "$LATEST" > "$WALLDIR"/json
+title=$(echo "$LATEST" | jq ".data.children[-1].data.title")
+echo "$title" > "$WALLDIR"/data.txt
+echo "$url" >> "$WALLDIR"/data.txt
+echo https://reddit.com$(echo "$LATEST" | jq ".data.children[-1].data.permalink" | sed 's/"//g') >> "$WALLDIR"/data.txt
 
 #Add image title
 convert "$WALLDIR/temp.$ext" -resize "$SIZE^" -gravity center -crop "$SIZE+0+0" -resize "$SIZE!" "$WALLDIR/wallpaper.jpg"
