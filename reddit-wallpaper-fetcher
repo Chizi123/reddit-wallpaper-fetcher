@@ -32,6 +32,9 @@ if [ -f "$WALLDIR"/json ]; then
     LATEST=$(cat "$WALLDIR"/json)
     LATEST_TIME=$(echo "$LATEST" | jq ".data.children[-1].data.created_utc")
 fi
+if [ "$LATEST_TIME" == "null" ]; then
+    LATEST_TIME=0
+fi
 
 #Try subreddits for new images
 for i in "${SUBREDDITS[@]}"; do
