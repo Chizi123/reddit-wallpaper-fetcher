@@ -53,8 +53,12 @@ fi
 
 #Download image
 url=$(echo "$LATEST" | jq ".data.children[-1].data.url" | sed 's/"//g')
+if [ -n "$(echo $url | grep gallery)" ]; then
+	media_id=$(echo "$LATEST" | jq ".data.children[-1].data.gallery_data.items[0].media_id" | sed 's/"//g')
+	url=$(echo "$LATEST" | jq ".data.children[-1].data.media_metadata.$media_id.p[0].u" | sed 's/"//g;s/\?.*//g;s/preview/i/g')
+fi
 ext="$(echo "$url" | rev | cut -d'.' -f1 | rev)"
-curl "$LOUD" -o "$WALLDIR/temp.$ext" "$url"
+curl "$url" "$LOUD" --output "$WALLDIR/temp.$ext"
 
 #Save image information
 echo "$LATEST" > "$WALLDIR"/json
