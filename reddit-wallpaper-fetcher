@@ -22,7 +22,6 @@ else
 fi
 
 [ ! -d "$WALLDIR" ] && mkdir "$WALLDIR"
-[ ! -d "$CONFIR" ] && mkdir "$CONFDIR"
 source "$CONFDIR"/reddit-wallpaper-fetcher.conf &>/dev/null
 
 #Loud output for testing a changed config
