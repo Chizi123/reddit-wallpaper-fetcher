@@ -31,7 +31,7 @@ source "$CONFDIR"/reddit-wallpaper-fetcher.conf &>/dev/null
 LATEST_TIME=0
 if [ -f "$WALLDIR"/json ]; then
     LATEST=$(cat "$WALLDIR"/json)
-    LATEST_TIME=$(echo "$LATEST" | jq ".data.children[-1].data.created_utc")
+    LATEST_TIME=$(echo "$LATEST" | jq -r ".data.children[-1].data.created_utc")
 fi
 if [ "$LATEST_TIME" == "null" ]; then
     LATEST_TIME=0
@@ -40,7 +40,7 @@ fi
 #Try subreddits for new images
 for i in "${SUBREDDITS[@]}"; do
     temp=$(curl "$LOUD" --user-agent "$USER" "https://www.reddit.com/r/$i.json?sort=$SORT&limit=1")
-    time=$(echo "$temp" | jq ".data.children[-1].data.created_utc")
+    time=$(echo "$temp" | jq -r ".data.children[-1].data.created_utc")
     if [ $(awk -v n1="$time" -v n2="$LATEST_TIME" 'BEGIN {printf (n1>n2?"1":"")}') ]; then
 	LATEST="$temp"
 	LATEST_TIME="$time"
@@ -53,20 +53,20 @@ if [ -f "$WALLDIR"/json ] && [ "$(cat "$WALLDIR"/json)" == "$LATEST" ]; then
 fi
 
 #Download image
-url=$(echo "$LATEST" | jq ".data.children[-1].data.url" | sed 's/"//g')
+url=$(echo "$LATEST" | jq -r ".data.children[-1].data.url" | sed 's/"//g')
 if [ -n "$(echo $url | grep gallery)" ]; then
-	media_id=$(echo "$LATEST" | jq ".data.children[-1].data.gallery_data.items[0].media_id" | sed 's/"//g')
-	url=$(echo "$LATEST" | jq ".data.children[-1].data.media_metadata.$media_id.p[0].u" | sed 's/"//g;s/\?.*//g;s/preview/i/g')
+	media_id=$(echo "$LATEST" | jq -r ".data.children[-1].data.gallery_data.items[0].media_id" | sed 's/"//g')
+	url=$(echo "$LATEST" | jq -r ".data.children[-1].data.media_metadata.$media_id.p[0].u" | sed 's/"//g;s/\?.*//g;s/preview/i/g')
 fi
 ext="$(echo "$url" | rev | cut -d'.' -f1 | rev)"
 curl "$url" "$LOUD" --output "$WALLDIR/temp.$ext"
 
 #Save image information
 echo "$LATEST" > "$WALLDIR"/json
-title=$(echo "$LATEST" | jq ".data.children[-1].data.title")
+title=$(echo "$LATEST" | jq -r ".data.children[-1].data.title")
 echo "$title" > "$WALLDIR"/data.txt
 echo "$url" >> "$WALLDIR"/data.txt
-echo https://reddit.com$(echo "$LATEST" | jq ".data.children[-1].data.permalink" | sed 's/"//g') >> "$WALLDIR"/data.txt
+echo https://reddit.com$(echo "$LATEST" | jq -r ".data.children[-1].data.permalink" | sed 's/"//g') >> "$WALLDIR"/data.txt
 
 #Add image title
 convert "$WALLDIR/temp.$ext" -resize "$SIZE^" -gravity center -crop "$SIZE+0+0" -resize "$SIZE!" "$WALLDIR/wallpaper.jpg"
