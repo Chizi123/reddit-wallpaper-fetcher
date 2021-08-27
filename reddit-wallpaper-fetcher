@@ -4,7 +4,7 @@ TESTING=0
 
 #Default variables
 SUBREDDITS=("Wallpapers")
-SORT=new
+SORT="new"
 USER=$(whoami)
 SIZE=1920x1080
 WRITE_TITLE=1
