@@ -68,6 +68,7 @@ curl "$url" "$LOUD" --output "$WALLDIR/temp.$ext"
 echo "$LATEST" > "$WALLDIR"/json
 title=$(echo "$LATEST" | jq -r ".data.children[-1].data.title")
 echo "$title" > "$WALLDIR"/data.txt
+echo $LATEST | jq -r ".data.children[-1].data.subreddit" >> "$WALLDIR"/data.txt
 echo "$url" >> "$WALLDIR"/data.txt
 echo https://reddit.com$(echo "$LATEST" | jq -r ".data.children[-1].data.permalink" | sed 's/"//g') >> "$WALLDIR"/data.txt
 
