@@ -41,6 +41,9 @@ fi
 for i in "${SUBREDDITS[@]}"; do
     temp=$(curl "$LOUD" --user-agent "$USER" "https://www.reddit.com/r/$i.json?sort=$SORT&limit=1")
     time=$(echo "$temp" | jq -r ".data.children[-1].data.created_utc")
+    if [ "$time" == "null" ]; then
+	    continue
+    fi
     if [ $(awk -v n1="$time" -v n2="$LATEST_TIME" 'BEGIN {printf (n1>n2?"1":"")}') ]; then
 	LATEST="$temp"
 	LATEST_TIME="$time"
