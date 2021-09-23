@@ -7,6 +7,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // return Ok(());
 }
 
+// Headers screwy and lowercase, not working with reddit
 async fn test_hyper() -> Result<(), Box<dyn std::error::Error>> {
     let client = hyper::client::Client::builder()
         .build::<_, hyper::body::Body>(hyper_tls::HttpsConnector::new());
@@ -32,6 +33,7 @@ async fn test_hyper() -> Result<(), Box<dyn std::error::Error>> {
     return Ok(());
 }
 
+// Headers screwy and lowercase, not working with reddit
 async fn test_reqwest() -> Result<(), Box<dyn std::error::Error>> {
     let client = reqwest::Client::builder()
         .user_agent(format!("{}{}", whoami::username(), whoami::devicename()))
@@ -50,6 +52,7 @@ async fn test_reqwest() -> Result<(), Box<dyn std::error::Error>> {
     return Ok(());
 }
 
+// Working with reddit, unsure how to extract data
 async fn test_curl() -> Result<(), Box<dyn std::error::Error>> {
     let mut client = curl::easy::Easy::new();
     client.useragent(format!("{}{}", whoami::username(), whoami::devicename()).as_str())?;
