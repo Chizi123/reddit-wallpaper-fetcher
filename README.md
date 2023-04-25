@@ -14,4 +14,3 @@ The list of subreddits is a bash list, so every entry needs to be in quotes and 
 # TODOs<br/>
 •Add support for all DE/WMs<br/>
 •Add support for multiple mmonitors
-
