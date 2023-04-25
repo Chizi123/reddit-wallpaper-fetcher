@@ -1,5 +1,5 @@
 # TITLE:Reddit wallpaper fetcher (Redwall)<br/>
-<br/>
+
 # What is this?<br/>
 This is a simple shell script to pull the images from a set of subreddits, intended for use as a dynamic wallpaper.
 It is written in bash and uses curl, jq and imagemagick for its processing.
