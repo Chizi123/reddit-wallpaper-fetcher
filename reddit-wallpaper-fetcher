@@ -1,4 +1,5 @@
 #!/bin/bash
+set -x
 
 TESTING=0
 ext=""
@@ -69,7 +70,7 @@ if [ "$1" = "--run" ] || [ "$1" = "-r" ]; then
 
 		corrupted_image=true
 		repetition=0
-		while [ "$corrupted_image" = true ] && [ "$repetition" -lt 20 ];
+		while [ "$corrupted_image" == true ] && [ "$repetition" -lt 20 ];
 		do
 			SELECTED_IMAGE=$(echo "$all_wallpapers" | shuf -n 1)
 			echo tried subreddits for new images
@@ -119,7 +120,10 @@ if [ "$1" = "--run" ] || [ "$1" = "-r" ]; then
 	
 		#Add image title to the temp
 		convert "$WALLDIR/temp.$ext" -resize "$SIZE^" -gravity center -crop "$SIZE+0+0" -resize "$SIZE!" "$WALLDIR/wallpaper.jpg"
-		rm "$WALLDIR/temp.$ext"
+		rm "$WALLDIR/temp.jpg"
+		rm "$WALLDIR/temp."
+		rm "$WALLDIR/temp.png"
+				
 
 		if [ $WRITE_TITLE == 1 ]; then
 		    touch $WALLDIR/wallpaper.jpg
