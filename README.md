@@ -1,3 +1,5 @@
+⚠️No longer works due to Reddit's API changes⚠️
+
 # TITLE:Reddit wallpaper fetcher (Redwall)<br/>
 
 # What is this?<br/>
