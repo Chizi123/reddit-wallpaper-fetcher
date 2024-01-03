@@ -1,81 +1,146 @@
 #!/bin/bash
+set -x
 
 TESTING=0
+ext=""
 
 #Default variables
-SUBREDDITS=("Wallpapers")
+#to change these access ~/.config/reddit-wallpaper-fetcher.conf
+SUBREDDITS=("Wallpapers" "redwall")
 SORT="new"
 USER=$(whoami)
 SIZE=1920x1080
 WRITE_TITLE=1
 TITLE_COLOR="white"
 TITLE_POSITION="Southeast"
-TITLE_SIZE=30
+TITLE_SIZE=20
+AMOUNT_OF_RESULTS_TO_SORT=5
 
-#Set directories for testing
-if [ $TESTING != 1 ]; then
-    CONFDIR="$HOME/.config"
-    WALLDIR="$HOME/.wallpaper"
-else
-    CONFDIR="$(dirname $(realpath "$0"))"
-    WALLDIR="$(dirname $(realpath "$0"))"
-fi
+if [ "$1" = "--run" ] || [ "$1" = "-r" ]; then
+	if [ "$2" != "" ]; then
+		#Set directories for testing
+		if [ $TESTING != 1 ]; then
+		    CONFDIR="$HOME/.config"
+		    WALLDIR="$HOME/.wallpaper"
+		else
+		    CONFDIR="$(dirname $(realpath "$0"))"
+		    WALLDIR="$(dirname $(realpath "$0"))"
+		fi
 
-[ ! -d "$WALLDIR" ] && mkdir "$WALLDIR"
-source "$CONFDIR"/reddit-wallpaper-fetcher.conf &>/dev/null
+		[ ! -d "$WALLDIR" ] && mkdir "$WALLDIR"
+		source "$CONFDIR"/reddit-wallpaper-fetcher.conf &>/dev/null
+		echo set directories for testing # info output
 
-#Loud output for testing a changed config
-[ -z "$1" ] && LOUD="-s"
+		#Load output for testing a changed config
+		[ -z "$1" ] && LOUD="-s"
+		echo loaded output for testing and changed config
 
-#Initialise time from last fetch
-LATEST_TIME=0
-if [ -f "$WALLDIR"/json ]; then
-    LATEST=$(cat "$WALLDIR"/json)
-    LATEST_TIME=$(echo "$LATEST" | jq -r ".data.children[-1].data.created_utc")
-fi
-if [ "$LATEST_TIME" == "null" ]; then
-    LATEST_TIME=0
-fi
+		#Initialise time from last fetch
+		LATEST_TIME=0
+		if [ -f "$WALLDIR"/json ]; then
+		    SELECTED_IMAGE=$(cat "$WALLDIR"/json)
+		    LATEST_TIME=$(echo "$SELECTED_IMAGE" | jq -r ".data.children[-1].data.created_utc")
+		fi
+		if [ "$LATEST_TIME" == "null" ]; then
+		    LATEST_TIME=0
+		fi
+		echo initialized time from last fetch
 
-#Try subreddits for new images
-for i in "${SUBREDDITS[@]}"; do
-    temp=$(curl "$LOUD" --user-agent "$USER" "https://www.reddit.com/r/$i.json?sort=$SORT&limit=1")
-    time=$(echo "$temp" | jq -r ".data.children[-1].data.created_utc")
-    if [ "$time" == "null" ]; then
-	    continue
-    fi
-    if [ $(awk -v n1="$time" -v n2="$LATEST_TIME" 'BEGIN {printf (n1>n2?"1":"")}') ]; then
-	LATEST="$temp"
-	LATEST_TIME="$time"
-    fi
-done
+		all_wallpapers=""
+		#Try subreddits for new images
+		for i in "${SUBREDDITS[@]}"; do
+		    echo $i
+		    temp=$(curl "$LOUD" --user-agent "$USER" "https://www.reddit.com/r/$i.json?sort=$SORT&limit=$AMOUNT_OF_RESULTS_TO_SORT" | jq -r '.data.children[].data.url')
+		    echo
+		    echo https://www.reddit.com/r/$i.json?sort=$SORT&limit=$AMOUNT_OF_RESULTS_TO_SORT
+		    echo $temp
+		    #time=$(echo "$temp" | jq -r ".data.children[-1].data.created_utc")
+		    all_wallpapers+=$(echo " $temp")
+		    #all_wallpapers=$(echo "$temp" | grep -Eo ' ')
+		    echo $all_wallpapers
 
-#No Update to do
-if [ -f "$WALLDIR"/json ] && [ "$(cat "$WALLDIR"/json)" == "$LATEST" ]; then
-    exit
-fi
+		    #if [ "$time" == "null" ]; then
+		#	    continue
+		    #fi
+		    #if [ $(awk -v n1="$time" -v n2="$LATEST_TIME" 'BEGIN {printf (n1>n2?"1":"")}') ]; then
+		#	LATEST="$temp"
+		#	LATEST_TIME="$time"
+		 #   fi
+		done
 
-#Download image
-url=$(echo "$LATEST" | jq -r ".data.children[-1].data.url" | sed 's/"//g')
-if [ -n "$(echo $url | grep gallery)" ]; then
-	media_id=$(echo "$LATEST" | jq -r ".data.children[-1].data.gallery_data.items[0].media_id" | sed 's/"//g')
-	url=$(echo "$LATEST" | jq -r ".data.children[-1].data.media_metadata.$media_id.p[0].u" | sed 's/"//g;s/\?.*//g;s/preview/i/g')
-fi
-ext="$(echo "$url" | rev | cut -d'.' -f1 | rev)"
-curl "$url" "$LOUD" --output "$WALLDIR/temp.$ext"
+		corrupted_image=true
+		repetition=0
+		while [ "$corrupted_image" == true ] && [ "$repetition" -lt 20 ];
+		do
+			SELECTED_IMAGE=$(echo "$all_wallpapers" | shuf -n 1)
+			echo tried subreddits for new images
+			echo ----------
+			echo $SELECTED_IMAGE
+			echo ----------
 
-#Save image information
-echo "$LATEST" > "$WALLDIR"/json
-title=$(echo "$LATEST" | jq -r ".data.children[-1].data.title")
-echo "$title" > "$WALLDIR"/data.txt
-echo $LATEST | jq -r ".data.children[-1].data.subreddit" >> "$WALLDIR"/data.txt
-echo "$url" >> "$WALLDIR"/data.txt
-echo https://reddit.com$(echo "$LATEST" | jq -r ".data.children[-1].data.permalink" | sed 's/"//g') >> "$WALLDIR"/data.txt
+			url=$SELECTED_IMAGE
+			echo url: $url
+			curl "$url" "$LOUD" --output "$WALLDIR/temp.$ext"
+			if [ ! -d "$WALLDIR" ]; then
+			  mkdir -p "$WALLDIR"
+			fi
+			filename=temp.${url: -3}
+			echo saved temp to $filename
+			#rm $WALLDIR/$filename
+			filepath="$WALLDIR/$filename"
+			curl "$url" -o "$filepath"
 
-#Add image title
-convert "$WALLDIR/temp.$ext" -resize "$SIZE^" -gravity center -crop "$SIZE+0+0" -resize "$SIZE!" "$WALLDIR/wallpaper.jpg"
-rm "$WALLDIR/temp.$ext"
+			#if [ file "$WALLDIR/temp.$ext" | grep -q "corrupted" ] && [ [ echo $(url: -3} !== "png" ] && [ echo $(url: -3) == "jpg" ] && [ echo ${url: -3} == "peg" ] ]; then
+			#if [ file "$WALLDIR/temp.$ext" | grep -q "corrupted" ] || [ echo "${url: -3}" != "png" && echo "${url: -3}" != "jpg" && echo "${url: -3}" == "peg" ]; then	
+			if [ $(file "$WALLDIR/temp.$ext" | grep -q "corrupted") ] || [ "${url: -3}" != "png" ] && [ "${url: -3}" != "jpg" ]; then
+				echo !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!image is corrupted!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+			else
+				corrupted_image=false
+				echo image is good, breaking
+				ext=${url: -3}	
+				break
+			fi
+			((repetition++))
+			echo repeition+=1 = $repetition
+		done
 
-if [ $WRITE_TITLE == 1 ]; then
-    convert "$WALLDIR/wallpaper.jpg" -fill "$TITLE_COLOR" -gravity "$TITLE_POSITION" -pointsize "$TITLE_SIZE" -annotate 0 "$title" "$WALLDIR/wallpaper.jpg"
+
+		#Save image information into data.txt
+		#echo "$SELECTED_IMAGE" > "$WALLDIR"/json
+		#title=$(echo "$SELECTED_IMAGE" | jq -r ".data.children[-1].data.title")
+		#echo $title
+		#echo "$title" > "$WALLDIR"/data.txt
+		#echo $SELECTED_IMAGE | jq -r ".data.children[-1].data.subreddit" >> "$WALLDIR"/data.txt
+		#echo "$url" >> "$WALLDIR"/data.txt
+		#echo https://reddit.com$(echo "$SELECTED_IMAGE" | jq -r ".data.children[-1].data.permalink" | sed 's/"//g') >> "$WALLDIR"/data.txt
+		#echo saved image info to wallpaper dir
+
+		echo created image file
+
+	
+		#Add image title to the temp
+		convert "$WALLDIR/temp.$ext" -resize "$SIZE^" -gravity center -crop "$SIZE+0+0" -resize "$SIZE!" "$WALLDIR/wallpaper.jpg"
+		rm "$WALLDIR/temp.jpg"
+		rm "$WALLDIR/temp."
+		rm "$WALLDIR/temp.png"
+				
+
+		if [ $WRITE_TITLE == 1 ]; then
+		    touch $WALLDIR/wallpaper.jpg
+		    echo created image file
+		    #convert "$WALLDIR/wallpaper.jpg" -fill "$TITLE_COLOR" -gravity "$TITLE_POSITION" -pointsize "$TITLE_SIZE" -annotate 0 "$title" "$WALLDIR/wallpaper.jpg"
+	            mv $WALLDIR/temp.$ext $WALLDIR/wallpaper.jpg
+		    echo added image title and contents to file wallpaper.jpg
+		  
+		fi
+
+		nitrogen --set-scaled --head=$(($2 - 1)) $HOME/.wallpaper/wallpaper.jpg
+		echo Success >> "$WALLDIR"/data.txt
+	elif [ "$2" = "" ]; then
+		echo specify monitor
+	fi	
+
+	
+elif [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
+	echo help
 fi
